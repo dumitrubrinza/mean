@@ -14,10 +14,10 @@ $ grunt
 ## Server installation
 
 Install in /www/cmep/services/mean and then configure in Apache as a reverse proxy.
-
+```
 ProxyPass /mean/ http://localhost:3000/ nocanon
 ProxyPassReverse /mean/ http://localhost:3000/
-
+```
 No further configuration is required to enable emails. 
 
 ## Local installation
