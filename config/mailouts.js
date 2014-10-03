@@ -113,7 +113,7 @@ module.exports = {
         return {
             from: sender,
             to: moderators,
-            subject: 'cm!c ' + user.displayName + ' commented on ' + spotUrl(comment.spotId),
+            subject: 'cmepc ' + user.displayName + ' commented on ' + spotUrl(comment.spotId),
             text: addReason(
                 'from: ' + user.email + '\n title:' + comment.title + '\n\n' + comment.content
             )
@@ -124,7 +124,7 @@ module.exports = {
         return {
             from: sender,
             to: moderators,
-            subject: 'cm!r new reply to ' + comment.title + ' at ' + spotUrl(comment.spotId),
+            subject: 'cmepc new reply to ' + comment.title + ' at ' + spotUrl(comment.spotId),
             text: addReason(reply)
         };
     },
@@ -133,7 +133,7 @@ module.exports = {
         return {
             from: sender,
             to: moderators,
-            subject: 'cm!e ' + editingUser.email + ' edited comment at ' + spotUrl(comment.spotId),
+            subject: 'cmepc ' + editingUser.email + ' edited comment at ' + spotUrl(comment.spotId),
             text: addReason(
                 'OLD\n===\n' + util.inspect(oldComment) + '\nNEW\n===\n' + util.inspect(comment)
             )
