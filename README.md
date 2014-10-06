@@ -3,7 +3,9 @@ mean
 
 This repo contains the CMEP server which provides the API for commenting services. It's based on the [MEAN.JS stack](http://meanjs.org/). Refer to that site for further details. The code here is a modified version of [MEAN](https://github.com/meanjs/mean), so its README is relevant.
 
-## Quick start (assuming the usual CMEP node/grunt environment)
+## Quick start
+
+Prerequisites are the usual CMEP git/node/grunt tools plus an installation of MongoDB.
 
 ```
 $ git clone https://github.com/meanjs/mean.git meanjs
