@@ -81,7 +81,7 @@ CommentSchema.pre('save', function(next) {
         for (var i = 0; i < len; i++) {
             var reply = this.replies[i].trim();
             if (reply.length > maxReply) {
-                reply = this.replies.substr(0, maxReply);
+                reply = this.replies[i].substr(0, maxReply);
             }
         }
     }

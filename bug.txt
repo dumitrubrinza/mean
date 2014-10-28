@@ -1,0 +1,13 @@
+
+/usr/local/www/cmep/services/mean/app/models/comment.server.model.js:84
+                reply = this.replies.substr(0, maxReply);
+                                     ^
+TypeError: Object _Julian Gilbey replied_ Thanks for this thought.  I've edited the solution to offer both this and a third approach: they will appear when the site is next updated. has no method 'substr'
+    at model.<anonymous> (/usr/local/www/cmep/services/mean/app/models/comment.server.model.js:84:38)
+    at _next (/usr/local/www/cmep/services/mean/node_modules/mongoose/node_modules/hooks/hooks.js:50:30)
+    at fnWrapper (/usr/local/www/cmep/services/mean/node_modules/mongoose/node_modules/hooks/hooks.js:159:8)
+    at complete (/usr/local/www/cmep/services/mean/node_modules/mongoose/lib/document.js:977:5)
+    at /usr/local/www/cmep/services/mean/node_modules/mongoose/lib/document.js:968:20
+    at SchemaArray.SchemaType.doValidate (/usr/local/www/cmep/services/mean/node_modules/mongoose/lib/schematype.js:603:22)  
+    at /usr/local/www/cmep/services/mean/node_modules/mongoose/lib/document.js:959:9
+    at process._tickDomainCallback (node.js:463:13)
