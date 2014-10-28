@@ -13,14 +13,14 @@ var mongoose = require('mongoose'),
  * A Validation function for local strategy properties
  */
 var validateLocalStrategyProperty = function(property) {
-    return ((this.provider !== 'local' && !this.updated) || property.length);
+    return ((this.provider !== 'local' && !this.updated) || (property && property.length));
 };
 
 var validateStringLength = function(limit) {
     return function(property) {
-
+        debug("property: "+property+ " limit: "+limit);
         return (this.provider !== 'local' && !this.updated) ||
-            (property.length <= limit && property === validator.escape(property) &&
+            (property != null && property.length <= limit && property === validator.escape(property) &&
             property === validator.stripLow(property, true));
     };
 };

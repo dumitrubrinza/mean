@@ -83,6 +83,7 @@ exports.signup = function(req, res) {
     // Then save the user 
     user.save(function(err) {
         if (err) {
+            debug(getErrorMessage(err));
             return res.send(400, getErrorMessage(err));
         } else {
 
@@ -92,6 +93,7 @@ exports.signup = function(req, res) {
 
             req.login(user, function(err) {
                 if (err) {
+                    debug(err);
                     res.send(400, err);
                 } else {
                     res.jsonp(user);
