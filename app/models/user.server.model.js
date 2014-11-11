@@ -18,9 +18,9 @@ var validateLocalStrategyProperty = function(property) {
 
 var validateStringLength = function(limit) {
     return function(property) {
-        debug("property: "+property+ " limit: "+limit);
+        debug('property: '+property+ ' limit: '+limit);
         return (this.provider !== 'local' && !this.updated) ||
-            (property != null && property.length <= limit && property === validator.escape(property) &&
+            (typeof property === 'string' && property.length <= limit && property === validator.escape(property) &&
             property === validator.stripLow(property, true));
     };
 };
@@ -190,23 +190,6 @@ UserSchema.pre('save', function(next) {
 
     next();
 });
-
-/* to be added to above
-mySchema.pre("save",function(next, done) {
-    var self = this;
-    mongoose.models["User"].findOne({email : self.email},function(err, results) {
-        if(err) {
-            done(err);
-        } else if(results) { //there was a result found, so the email address exists
-            self.invalidate("email","email must be unique");
-            done(new Error("email must be unique"));
-        } else {
-            done();
-        }
-    });
-    next();
-});
-*/
 
 /**
  * Create instance method for hashing a password

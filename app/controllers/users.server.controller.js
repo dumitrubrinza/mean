@@ -13,22 +13,6 @@ var mongoose = require('mongoose'),
     mailouts = require('../../config/mailouts'),
     debug = require('debug')('users');
 
-// var oneTimes = {};
-
-// function clearOneTime(email) {
-//     var ot, tobj;
-
-//     debug('deleting one time password ' + email);
-
-//     // cancel the timeout
-//     if ((ot = oneTimes[email]) && (tobj = ot[1])) {
-//         clearTimeout(tobj);
-
-//         // delete the record from the oneTimes object
-//         delete oneTimes[email];
-//     }
-// }
-
 /**
  * Get the error message from error object
  */
@@ -70,15 +54,8 @@ exports.signup = function(req, res) {
     user.provider = 'local';
     user.displayName = user.firstName + ' ' + user.lastName;
 
-    if (s) {
-        user.schoolurn = '' + s.urn;
-        user.schoolname = s.name;
-        user.schooladdr1 = s.addr1;
-        user.schooladdr2 = s.addr2;
-        user.schooladdr3 = s.addr3;
-        user.schooltown = s.town;
-        user.schoolpostCode = s.postCode;
-    }
+    //debug('school = ' + util.inspect(s));
+    if (s) copySchoolDetails(s, user);
 
     // Then save the user 
     user.save(function(err) {
@@ -107,20 +84,14 @@ exports.signup = function(req, res) {
  * Signin after passport authentication
  */
 exports.signin = function(req, res, next) {
-    debug('signin request');
+    //debug('signin request');
     // First check whether this is a one-time sign-in
-    debug('req.body = ' + util.inspect(req.body));
-
-    // debugger;
+    //debug('req.body = ' + util.inspect(req.body));
 
     if (req.body) {
         var email = req.body.email;
         var password = req.body.password;
         var oneTime = req.body.oneTime;
-
-        debug('email = ' + email);
-        debug('password = ' + password);
-        // debugger;
 
         // fetch user details
         if (oneTime) {
@@ -211,86 +182,6 @@ exports.signin = function(req, res, next) {
     })(req, res, next);
 };
 
-// exports.signin = function(req, res, next) {
-//     debug('signin request');
-//     // First check whether this is a one-time sign-in
-//     debug('req.body = ' + util.inspect(req.body));
-
-//     if (req.body) {
-//         var email = req.body.email;
-//         var password = req.body.password;
-//         if (oneTimes) {
-//             var ot = oneTimes[email];
-//             if (ot && ot[0] === password) {
-
-//                 debugger;
-
-//                 // clear the oneTime password timeout
-//                 clearTimeout(ot[1]);
-//                 delete oneTimes[email];
-
-//                 // fetch user details
-//                 return User.findOne({
-//                     email: email
-//                 }).exec(function(err, user) {
-//                     if (err) {
-//                         debug(err);
-//                         res.send(400, {
-//                             message: 'Lookup failure on ' + email
-//                         });
-//                     } else {
-
-//                         // We need to set the session cookie so user
-//                         // can be redirected to settings page.
-
-//                         // Remove sensitive data before login
-//                         user.password = undefined;
-//                         user.salt = undefined;
-
-//                         req.login(user, function(err) {
-//                             if (err) {
-//                                 // debug('signin 400 failure');
-//                                 // debug(util.inspect(err));
-//                                 res.send(400, err);
-//                             } else {
-//                                 res.jsonp(200, {
-//                                     user: user
-//                                 });
-//                             }
-//                         });
-//                     }
-//                 });
-//             }
-//         }
-//     }
-
-//     // otherwise drop through to normal authenticate
-//     passport.authenticate('local', function(err, user, info) {
-//         if (err) {
-//             debug('signin err = ' + err);
-//             res.send(400, err);
-//         } else if (!user) {
-//             debug('no user ' + info.message);
-//             res.send(400, info);
-//         } else {
-//             // Remove sensitive data before login
-//             user.password = undefined;
-//             user.salt = undefined;
-
-//             req.login(user, function(err) {
-//                 if (err) {
-//                     // debug('signin 400 failure');
-//                     // debug(util.inspect(err));
-//                     res.send(400, err);
-//                 } else {
-//                     res.jsonp(user);
-//                 }
-//             });
-//         }
-//     })(req, res, next);
-// };
-
-
 /**
  * Find user by email or username
  */
@@ -334,59 +225,158 @@ exports.findOne = function(req, res) {
 };
 
 
+function copySchoolDetails(s, user) {
+    if (s) {
+        user.schoolurn = s.urn || '';
+        user.schoolname = s.name || '';
+        user.schooladdr1 = s.addr1 || '';
+        user.schooladdr2 = s.addr2 || '';
+        user.schooladdr3 = s.addr3 || '';
+        user.schooltown = s.town || '';
+        user.schoolpostCode = s.postCode || '';
+    }
+    else {
+        user.schoolurn = 
+        user.schoolname =
+        user.schooladdr1 =
+        user.schooladdr2 =
+        user.schooladdr3 =
+        user.schooltown =
+        user.schoolpostCode = '';
+    }
+}
+
+function copyParams(query, user) {
+    var keys = ['username', 'affiliated', 'email', 'firstName', 'lastName', 'title'];
+    keys.forEach(function(key) {
+        if(query[key] != undefined) {
+            user[key] = query[key];
+        }
+    });
+
+    var s = null;
+    if(query.school) {
+        try {
+            s = JSON.parse(query.school);
+            if(s) copySchoolDetails(s, user);
+        } catch (e) {
+            debug("invalid school data", util.inspect(query.school));
+        }
+    }
+    user.email2 = '';
+
+}
+
+
 /**
  * Update user details
  */
 exports.update = function(req, res) {
-    // Init Variables
-    var user = req.user;
-    var message = null;
 
-    // For security measurement we remove the roles from the req.body object
-    delete req.body.roles;
+    debug('HELLO');
 
-    if (user) {
-        // Merge existing user
-        user = _.extend(user, req.body);
+    var email = req.query.email;
+    var username = req.query.username;
+    var updateUser = function(req, res, user) {
 
-        var s = user.school;
-        if (s) {
-            user.schoolurn = '' + s.urn;
-            user.schoolname = s.name;
-            user.schooladdr1 = s.addr1;
-            user.schooladdr2 = s.addr2;
-            user.schooladdr3 = s.addr3;
-            user.schooltown = s.town;
-            user.schoolpostCode = s.postCode;
+        // Init Variables
+        var message = null;
+
+        // For security measurement we remove the roles from the req.body object
+        delete req.body.roles;
+
+        if (user) { 
+            // Merge editable fields of existing user
+            copyParams(req.query, user);
+
+            debug('query = ' + util.inspect(req.query));
+
+            //debug('extending user with req.body');
+            //debug(util.inspect(req.body));
+
+            user.updated = Date.now();
+            user.displayName = user.firstName + ' ' + user.lastName;
+            // user.username = user.email;
+
+            debug('user = ' + util.inspect(user));
+
+            user.save(function(err) {
+                if (err) {
+                    debug('e400 1');
+                    return res.send(400, {
+                        message: getErrorMessage(err)
+                    });
+                } else {
+                    req.login(user, function(err) {
+                        debug ('login');
+                        if (err) {
+                            debug('e400 2');
+                            res.send(400, err);
+                        } else {
+                            debug('jsonp');
+                            res.jsonp(user);
+                        }
+                    });
+                }
+            });
+        } else {
+            res.send(400, {
+                message: 'User is not signed in'
+            });
         }
+    }
 
-        debug('extending user with req.body');
-        debug(util.inspect(req.body));
-
-        user.updated = Date.now();
-        user.displayName = user.firstName + ' ' + user.lastName;
-        user.username = user.email;
-
-        user.save(function(err) {
-            if (err) {
-                return res.send(400, {
-                    message: getErrorMessage(err)
-                });
-            } else {
-                req.login(user, function(err) {
-                    if (err) {
-                        res.send(400, err);
-                    } else {
-                        res.jsonp(user);
+    var tryUsername = function(username) {
+        if (username) {
+            User.findOne({
+                username: username
+            }).exec(function(err, user) {
+                if (err) {
+                    debug('username lookup failed = '+username)
+                    debug(err);
+                    res.send(400, {
+                        message: 'Failed to find user'
+                    });
+                } 
+                else 
+                    if(user) {
+                        updateUser(req, res, user)
                     }
-                });
+                    else {
+                        res.send(400, {
+                            message: 'Failed to find user'
+                        });
+                    }
+            });
+        } else {
+            debug('no username');
+            res.send(400, {
+                message: 'empty query'
+            });
+        }
+    }
+
+    if (email) {
+        debug('email = '+email);
+        User.findOne({
+            email: email
+        }).exec(function(err, user) {
+            if (err) {
+                tryUsername(username);
+            } 
+            else {
+                if(user === null) {
+                    tryUsername(username);
+                }
+                else {
+                    updateUser(req, res, user);
+                }
             }
         });
     } else {
-        res.send(400, {
-            message: 'User is not signed in'
-        });
+        tryUsername(username);
     }
+
 };
 
 // This is an example that works on the server:
@@ -736,114 +726,3 @@ exports.hasAuthorization = function(roles) {
     };
 };
 
-// /**
-//  * Helper function to save or update a OAuth user profile
-//  */
-// exports.saveOAuthUserProfile = function(req, providerUserProfile, done) {
-//     if (!req.user) {
-//         // Define a search query fields
-//         var searchMainProviderIdentifierField = 'providerData.' + providerUserProfile.providerIdentifierField;
-//         var searchAdditionalProviderIdentifierField = 'additionalProvidersData.' + providerUserProfile.provider + '.' + providerUserProfile.providerIdentifierField;
-
-//         // Define main provider search query
-//         var mainProviderSearchQuery = {};
-//         mainProviderSearchQuery.provider = providerUserProfile.provider;
-//         mainProviderSearchQuery[searchMainProviderIdentifierField] = providerUserProfile.providerData[providerUserProfile.providerIdentifierField];
-
-//         // Define additional provider search query
-//         var additionalProviderSearchQuery = {};
-//         additionalProviderSearchQuery[searchAdditionalProviderIdentifierField] = providerUserProfile.providerData[providerUserProfile.providerIdentifierField];
-
-//         // Define a search query to find existing user with current provider profile
-//         var searchQuery = {
-//             $or: [mainProviderSearchQuery, additionalProviderSearchQuery]
-//         };
-
-//         User.findOne(searchQuery, function(err, user) {
-//             if (err) {
-//                 return done(err);
-//             } else {
-//                 if (!user) {
-//                     var possibleUsername = providerUserProfile.username || ((providerUserProfile.email) ? providerUserProfile.email.split('@')[0] : '');
-
-//                     User.findUniqueUsername(possibleUsername, null, function(availableUsername) {
-//                         user = new User({
-//                             firstName: providerUserProfile.firstName,
-//                             lastName: providerUserProfile.lastName,
-//                             username: availableUsername,
-//                             displayName: providerUserProfile.displayName,
-//                             email: providerUserProfile.email,
-//                             provider: providerUserProfile.provider,
-//                             providerData: providerUserProfile.providerData
-//                         });
-
-//                         // And save the user
-//                         user.save(function(err) {
-//                             return done(err, user);
-//                         });
-//                     });
-//                 } else {
-//                     return done(err, user);
-//                 }
-//             }
-//         });
-//     } else {
-//         // User is already logged in, join the provider data to the existing user
-//         User.findById(req.user.id, function(err, user) {
-//             if (err) {
-//                 return done(err);
-//             } else {
-//                 // Check if user exists, is not signed in using this provider, and doesn't have that provider data already configured
-//                 if (user && user.provider !== providerUserProfile.provider && (!user.additionalProvidersData || !user.additionalProvidersData[providerUserProfile.provider])) {
-//                     // Add the provider data to the additional provider data field
-//                     if (!user.additionalProvidersData) user.additionalProvidersData = {};
-//                     user.additionalProvidersData[providerUserProfile.provider] = providerUserProfile.providerData;
-
-//                     // Then tell mongoose that we've updated the additionalProvidersData field
-//                     user.markModified('additionalProvidersData');
-
-//                     // And save the user
-//                     user.save(function(err) {
-//                         return done(err, user, '/#!/settings/accounts');
-//                     });
-//                 } else {
-//                     return done(err, user);
-//                 }
-//             }
-//         });
-//     }
-// };
-
-// /**
-//  * Remove OAuth provider
-//  */
-// exports.removeOAuthProvider = function(req, res, next) {
-//     var user = req.user;
-//     var provider = req.param('provider');
-
-//     if (user && provider) {
-//         // Delete the additional provider
-//         if (user.additionalProvidersData[provider]) {
-//             delete user.additionalProvidersData[provider];
-
-//             // Then tell mongoose that we've updated the additionalProvidersData field
-//             user.markModified('additionalProvidersData');
-//         }
-
-//         user.save(function(err) {
-//             if (err) {
-//                 return res.send(400, {
-//                     message: getErrorMessage(err)
-//                 });
-//             } else {
-//                 req.login(user, function(err) {
-//                     if (err) {
-//                         res.send(400, err);
-//                     } else {
-//                         res.jsonp(user);
-//                     }
-//                 });
-//             }
-//         });
-//     }
-// };
