@@ -13,6 +13,48 @@ var mongoose = require('mongoose'),
     mailouts = require('../../config/mailouts'),
     debug = require('debug')('users');
 
+var copySchoolDetails = function(s, user) {
+        if (s) {
+            user.schoolurn = s.urn || '';
+            user.schoolname = s.name || '';
+            user.schooladdr1 = s.addr1 || '';
+            user.schooladdr2 = s.addr2 || '';
+            user.schooladdr3 = s.addr3 || '';
+            user.schooltown = s.town || '';
+            user.schoolpostCode = s.postCode || '';
+        }
+        else {
+            user.schoolurn = 
+            user.schoolname =
+            user.schooladdr1 =
+            user.schooladdr2 =
+            user.schooladdr3 =
+            user.schooltown =
+            user.schoolpostCode = '';
+        }
+    };
+
+var copyParams = function(query, user) {
+        var keys = ['username', 'affiliated', 'email', 'firstName', 'lastName', 'title'];
+        keys.forEach(function(key) {
+            if(query[key] !== undefined) {
+                user[key] = query[key];
+            }
+        });
+
+        var s = null;
+        if(query.school) {
+            try {
+                s = JSON.parse(query.school);
+                if(s) copySchoolDetails(s, user);
+            } catch (e) {
+                debug('invalid school data', util.inspect(query.school));
+            }
+        }
+        user.email2 = '';
+
+    };
+
 /**
  * Get the error message from error object
  */
@@ -224,50 +266,6 @@ exports.findOne = function(req, res) {
 
 };
 
-
-function copySchoolDetails(s, user) {
-    if (s) {
-        user.schoolurn = s.urn || '';
-        user.schoolname = s.name || '';
-        user.schooladdr1 = s.addr1 || '';
-        user.schooladdr2 = s.addr2 || '';
-        user.schooladdr3 = s.addr3 || '';
-        user.schooltown = s.town || '';
-        user.schoolpostCode = s.postCode || '';
-    }
-    else {
-        user.schoolurn = 
-        user.schoolname =
-        user.schooladdr1 =
-        user.schooladdr2 =
-        user.schooladdr3 =
-        user.schooltown =
-        user.schoolpostCode = '';
-    }
-}
-
-function copyParams(query, user) {
-    var keys = ['username', 'affiliated', 'email', 'firstName', 'lastName', 'title'];
-    keys.forEach(function(key) {
-        if(query[key] != undefined) {
-            user[key] = query[key];
-        }
-    });
-
-    var s = null;
-    if(query.school) {
-        try {
-            s = JSON.parse(query.school);
-            if(s) copySchoolDetails(s, user);
-        } catch (e) {
-            debug("invalid school data", util.inspect(query.school));
-        }
-    }
-    user.email2 = '';
-
-}
-
-
 /**
  * Update user details
  */
@@ -324,7 +322,7 @@ exports.update = function(req, res) {
                 message: 'User is not signed in'
             });
         }
-    }
+    };
 
     var tryUsername = function(username) {
         if (username) {
@@ -332,7 +330,7 @@ exports.update = function(req, res) {
                 username: username
             }).exec(function(err, user) {
                 if (err) {
-                    debug('username lookup failed = '+username)
+                    debug('username lookup failed = '+username);
                     debug(err);
                     res.send(400, {
                         message: 'Failed to find user'
@@ -340,7 +338,7 @@ exports.update = function(req, res) {
                 } 
                 else 
                     if(user) {
-                        updateUser(req, res, user)
+                        updateUser(req, res, user);
                     }
                     else {
                         res.send(400, {
@@ -354,7 +352,7 @@ exports.update = function(req, res) {
                 message: 'empty query'
             });
         }
-    }
+    };
 
     if (email) {
         debug('email = '+email);
